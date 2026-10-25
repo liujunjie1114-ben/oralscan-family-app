@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OralScan · Dentist Console</title>
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--ink:#111827;--mut:#6b7280;--bd:#e5e7eb;--pri:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#ef4444}
+*{box-sizing:border-box;margin:0}
+body{font:14px/1.55 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);padding:24px;max-width:960px;margin:0 auto}
+h1{font-size:20px;margin-bottom:4px}
+.lead{color:var(--mut);margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:12px}
+.row{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+button{font:inherit;cursor:pointer;border:none;border-radius:10px;padding:8px 14px;background:var(--pri);color:#fff}
+button.sec{background:#eef2ff;color:var(--pri)}
+button.ghost{background:transparent;color:var(--mut)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.caseItem{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.caseItem:hover{border-color:var(--pri)}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px;background:#eef2ff;color:var(--pri)}
+.tag.gray{background:#f3f4f6;color:var(--mut)}
+.tag.warn{background:#fef3c7;color:#92400e}
+.tag.bad{background:#fee2e2;color:#b91c1c}
+img.photo{width:100%;border-radius:12px;display:block}
+.viewer{position:relative}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}
+select,input[type=text]{font:inherit;padding:6px 8px;border:1px solid var(--bd);border-radius:8px;background:#fff;color:var(--ink)}
+textarea{font:inherit;width:100%;min-height:60px;padding:8px;border:1px solid var(--bd);border-radius:8px;resize:vertical}
+.mut{color:var(--mut)}
+.small{font-size:12px}
+.evi{background:#f8fafc;border-left:3px solid var(--pri);padding:8px 12px;border-radius:0 8px 8px 0;font-size:13px;color:var(--mut);margin:10px 0}
+</style>
+</head>
+<body>
+<h1>OralScan · Dentist Console</h1>
+<p class="lead">审核家长提交的筛查病例。AI 原始输出为只读证据存档，你的修订将独立记录。</p>
+<div id="app"><div class="card mut">Loading…</div></div>
+
+<script>
+const $=s=>document.querySelector(s);
+let CASES=[],OPEN=null,D=null;
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const chip=s=>s==='reviewed'?'<span class="tag">✓ 已审核</span>':'<span class="tag warn">待审核</span>';
+const clsLabel=k=>({caries:'Caries 龋齿',cavity:'Cavity 龋洞',crack:'Crack 裂纹',plaque:'Plaque 牙菌斑',calculus:'Calculus 牙结石',gingivitis:'Gingivitis 牙龈炎',tooth_discolation:'Discoloration 色沉',tooth_discoloration:'Discoloration 色沉',hypodontia:'Hypodontia 缺牙',ulcer:'Ulcer 溃疡'}[k]||k);
+
+async function api(path,opt){const r=await fetch(path,opt);if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+
+async function loadList(){
+ try{const {cases}=await api('/v1/cases');CASES=cases;
+  $('#app').innerHTML=`<div class="card"><div class="row between"><b>病例列表 (${cases.length})</b><button class="sec" onclick="loadList()">刷新</button></div>
+  <div style="margin-top:10px">${cases.length?cases.map(c=>`<button class="caseItem" onclick="openCase('${c.id}')">
+   <b style="min-width:210px">${esc(c.id)}</b>
+   <span class="mut" style="flex:1">${esc(c.created_at)} · ${esc(c.child)} · ${c.detections_count} 项检出</span>
+   <span class="tag gray">${c.source==='demo'?'Demo 模拟':'YOLOv8 真实模型'}</span>${chip(c.status)}</button>`).join('')
+  :'<p class="mut">暂无病例。家长端提交后自动出现在这里。</p>'}</div></div>`;
+ }catch(e){$('#app').innerHTML=`<div class="card mut">无法连接病例库: ${esc(e.message)}</div>`}}
+
+async function openCase(id){
+ $('#app').innerHTML='<div class="card mut">Loading case…</div>';
+ try{D=await api('/v1/cases/'+id);OPEN=id;renderDetail()}catch(e){$('#app').innerHTML=`<div class="card mut">加载失败: ${esc(e.message)}</div>`}}
+
+function renderDetail(){
+ const img=D.image_file?('/case-img/'+D.image_file):'';
+ const dets=D.model_output||[];
+ $('#app').innerHTML=`
+ <button class="ghost" onclick="OPEN=null;loadList()">← 返回列表</button>
+ <div class="card" style="margin-top:10px">
+  <div class="row between wrap"><b style="font-size:16px">${esc(D.id)}</b><span>${chip(D.status)} <span class="tag gray">${D.source==='demo'?'Demo 模拟':'YOLOv8 真实模型'}</span></span></div>
+  <div class="row wrap small mut" style="margin-top:6px">
+   <span>患儿: ${esc(D.childName||'Emma')} · Age ${esc(D.childAge||'-')}</span>
+   <span>提交: ${esc(D.created_at)}</span><span>报告: ${esc(D.reportId||'-')}</span><span>风险: ${esc(D.risk||'-')}</span></div>
+  ${img?`<div class="viewer" style="margin:12px 0"><img class="photo" id="photo" src="${img}" alt="原图"><canvas id="ov"></canvas></div>`:'<p class="mut">无原图存档</p>'}
+  <div class="evi">🔒 证据链：下表为模型原始输出（只读）。你的确认/修订/驳回会作为独立记录保存，不会覆盖模型结果。</div>
+  ${dets.length?`<table><tr><th>#</th><th>类别 / FDI</th><th>置信度</th><th>审核结论</th></tr>
+   ${dets.map((d,i)=>`<tr data-i="${i}">
+    <td>${i+1}</td>
+    <td><b>${esc(clsLabel(d.cls))}</b><br><span class="mut small">FDI ${esc(d.fdi)}</span></td>
+    <td>${Math.round(d.conf*100)}%</td>
+    <td><div class="row wrap" style="gap:6px">
+     <select data-act="${i}"><option value="confirmed">✓ 确认</option><option value="revised">✎ 修订</option><option value="rejected">✕ 驳回</option></select>
+     <span id="rev-${i}" style="display:none" class="row" style="gap:6px">
+      <select data-rcls="${i}">${Object.keys({caries:1,cavity:1,crack:1,plaque:1,calculus:1,gingivitis:1,ulcer:1,hypodontia:1,tooth_discolation:1}).map(k=>`<option value="${k}">${clsLabel(k)}</option>`).join('')}</select>
+      <input type="text" data-rfdi="${i}" size="3" placeholder="FDI"></span>
+     <input type="text" data-note="${i}" size="18" placeholder="备注（可选）"></div></td></tr>`).join('')}</table>`
+  :'<p class="mut">模型未检出病灶。</p>'}
+  <div style="margin-top:12px"><b>临床意见</b><textarea id="dnote" placeholder="给家长的临床建议、随访安排…"></textarea></div>
+  <div class="row between" style="margin-top:10px"><span class="small mut">审核人</span><input type="text" id="dname" value="Dr. Chen" style="width:160px"></div>
+  <div class="row" style="margin-top:12px;justify-content:flex-end">
+   ${D.status==='reviewed'?'<span class="mut small">已于 '+esc(D.reviewed_at)+' 审核，可再次提交覆盖审核内容</span>':''}
+   <button onclick="submitReview()">${D.status==='reviewed'?'更新审核':'提交审核'}</button></div>
+ </div>`;
+ if(img){const p=$('#photo'),cv=$('#ov');const draw=()=>{cv.width=p.clientWidth;cv.height=p.clientHeight;const x=cv.getContext('2d');
+   const sx=cv.width/p.naturalWidth,sy=cv.height/p.naturalHeight;
+   dets.forEach(d=>{const c={caries:'#ef4444',cavity:'#f97316',crack:'#64748b',plaque:'#f59e0b',calculus:'#8b5cf6'}[d.cls]||'#2563eb';
+    x.strokeStyle=c;x.lineWidth=2;x.strokeRect(d.box.x1*sx,d.box.y1*sy,(d.box.x2-d.box.x1)*sx,(d.box.y2-d.box.y1)*sy);
+    const t=`${d.fdi}·${d.cls} ${Math.round(d.conf*100)}%`;x.font='11px sans-serif';const w=x.measureText(t).width+8;
+    x.fillStyle=c;x.fillRect(d.box.x1*sx,Math.max(0,d.box.y1*sy-16),w,15);x.fillStyle='#fff';x.fillText(t,d.box.x1*sx+4,Math.max(11,d.box.y1*sy-5))})};
+  p.complete?draw():p.addEventListener('load',draw);addEventListener('resize',draw)}
+ document.querySelectorAll('[data-act]').forEach(s=>s.addEventListener('change',()=>{$('#rev-'+s.dataset.act).style.display=s.value==='revised'?'':'none'}))
+}
+
+async function submitReview(){
+ const revisions=[...document.querySelectorAll('[data-act]')].map(s=>({index:+s.dataset.act,action:s.value,
+  cls:s.value==='revised'?(document.querySelector(`[data-rcls="${s.dataset.act}"]`)||{}).value:undefined,
+  fdi:s.value==='revised'?(document.querySelector(`[data-rfdi="${s.dataset.act}"]`)||{}).value:undefined,
+  note:(document.querySelector(`[data-note="${s.dataset.act}"]`)||{}).value||''}));
+ try{await api('/v1/cases/'+OPEN+'/review',{method:'POST',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({dentistName:$('#dname').value||'Dentist',note:$('#dnote').value,revisions})});
+ alert('✅ 审核已提交，家长端可见');openCase(OPEN)}catch(e){alert('提交失败: '+e.message)}}
+
+loadList();
+</script>
+</body>
+</html>

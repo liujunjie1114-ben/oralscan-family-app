@@ -1,0 +1,3 @@
+-r ../oralscan-server/requirements.txt
+kagglehub
+PyYAML

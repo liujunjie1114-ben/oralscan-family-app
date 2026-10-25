@@ -170,7 +170,7 @@ const DATA={
  findings:[{t:'Back teeth need attention',s:'Guide Emma to brush the lower molars more carefully.',c:'#f59e0b'},{t:'Image quality is good',s:'The scan captured all required areas.',c:'#10b981'},{t:'Recheck in 14 days',s:'Track whether the attention area improves.',c:'#3b82f6'}],
  teeth:Array.from({length:16},(_,i)=>({id:i,warn:[12,13,14].includes(i)}))
 };
-const PAGES=[{id:'home',t:'Home',i:'home'},{id:'connect',t:'Device',i:'bt'},{id:'precheck',t:'Pre-check',i:'info'},{id:'screening',t:'Screening',i:'scan'},{id:'summary',t:'Summary',i:'rep'},{id:'report',t:'Report',i:'tooth'}];
+const PAGES=[{id:'home',t:'Home',i:'home'},{id:'connect',t:'Device',i:'bt'},{id:'precheck',t:'Pre-check',i:'info'},{id:'screening',t:'Screening',i:'scan'},{id:'summary',t:'Summary',i:'rep'},{id:'report',t:'Report',i:'tooth'},{id:'cases',t:'Cases',i:'rep'}];
 const go=id=>`data-go="${id}"`;
 const V={
 home:()=>`<h1>Good morning, Ms. Li</h1>
@@ -209,14 +209,14 @@ summary:()=>`<h1>Screening Summary</h1><p class="lead">Emma’s oral scan is com
 <section class="card tap" ${go('report')} tabindex="0" role="button"><h2>Tooth Map Preview</h2><p class="muted">Lower molars may need more careful brushing.</p>${teeth(false)}${legend()}</section>
 <section class="card"><h2>Key Findings &amp; Next Steps</h2><div class="list">${DATA.findings.map(f=>`<div class="li"><span style="width:10px;height:10px;border-radius:50%;background:${f.c};flex:none"></span><div><b>${f.t}</b><span class="muted">${f.s}</span></div></div>`).join('')}</div></section>
 <div class="note">${svg('info',16)}This screening supports early risk awareness and does not replace a dentist’s diagnosis.</div>
-<button class="btn" ${go('report')}>View Detailed Report</button><button class="btn ghost">Talk to a Dentist</button>`,
+<button class="btn" ${go('report')}>View Detailed Report</button><button class="btn ghost" data-talk>Talk to a Dentist</button>`,
 report:()=>`<h1>Detailed Report</h1><p class="lead">Review Emma’s attention areas and follow-up suggestions.</p>
 <section class="card lg"><h2>Report Overview</h2><div class="row between wrap"><div><span class="muted">Selected Area</span><h3 id="selArea">Lower Molars</h3><span class="muted">Screening indication only</span></div><div class="row" style="gap:6px"><span class="tag">Risk: Low</span><span class="tag">Quality: Good</span></div></div></section>
 <section class="card"><h2>Tooth Area Detail</h2>${teeth(true)}${legend(true)}</section>
 <section class="card"><h2>Screening Evidence</h2><div class="ph">Captured image preview</div><b style="font-size:var(--fs-14)">Possible plaque buildup</b><div class="row wrap"><span class="tag blue">Confidence: Medium</span><span class="tag">Coverage: Complete</span></div></section>
 <section class="card"><h2>What this means</h2><p class="muted">Back teeth are harder for children to clean. Guide Emma to brush this area more carefully.</p></section>
 <div class="note">${svg('info',16)}Screening results are for early awareness only, not a dental diagnosis.</div>
-<div class="bottom"><button class="btn sec" style="width:auto" ${go('summary')}>Back</button><button class="btn">Talk to a Dentist</button></div>`
+<div class="bottom"><button class="btn sec" style="width:auto" ${go('summary')}>Back</button><button class="btn" data-talk>Talk to a Dentist</button></div>`
 };
 function teeth(sel){return `<div class="teeth">${DATA.teeth.map(t=>`<button class="tooth ${t.warn?'warn':''} ${sel&&t.id===13?'sel':''}" aria-label="Tooth ${t.id+1}${t.warn?', may need attention':''}" data-tooth="${t.id}"></button>`).join('')}</div>`}
 function legend(sel){return `<div class="row wrap muted" style="gap:12px"><span>● Healthy</span><span style="color:#d97706">● ${sel?'May need attention':'Needs attention'}</span><span>${sel?'○ Selected':'○ Not reviewed'}</span></div>`}
@@ -232,9 +232,13 @@ function legend(sel){return `<div class="row wrap muted" style="gap:12px"><span>
  *   (detections follow the Ultralytics YOLOv8 results JSON; normalizeYolo() adapts them)
  * ================================================================ */
 const OralScanAPI=(()=>{
- const config={baseURL:'',mock:true,timeout:30000,token:''};
+ const localHost=['localhost','127.0.0.1','[::1]'].includes(location.hostname);
+ const endpoint=new URLSearchParams(location.search).get('api');
+ let baseURL=localHost?'http://localhost:8080':'';
+ if(endpoint){try{const url=new URL(endpoint);if(url.protocol==='https:'||(localHost&&url.protocol==='http:'))baseURL=url.origin}catch(e){}}
+ const config={baseURL,mock:!baseURL,timeout:30000,token:''};
  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
- const CLASSES={caries:{label:'Caries',color:'#ef4444'},plaque:{label:'Plaque',color:'#f59e0b'},calculus:{label:'Calculus',color:'#8b5cf6'},gingivitis:{label:'Gingivitis',color:'#ec4899'}};
+ const CLASSES={caries:{label:'Caries',color:'#ef4444'},cavity:{label:'Cavity',color:'#f97316'},crack:{label:'Crack',color:'#64748b'},plaque:{label:'Plaque',color:'#f59e0b'},calculus:{label:'Calculus',color:'#8b5cf6'},gingivitis:{label:'Gingivitis',color:'#ec4899'},tooth_discoloration:{label:'Discoloration',color:'#eab308'},tooth_discolation:{label:'Discoloration',color:'#eab308'},hypodontia:{label:'Hypodontia',color:'#0ea5e9'},ulcer:{label:'Ulcer',color:'#14b8a6'}};
  const STAGES=[
   {id:'M1',t:'Image quality gate',s:'Blur, exposure and coverage check'},
   {id:'M2',t:'Tooth segmentation',s:'Locate each tooth region'},
@@ -242,6 +246,7 @@ const OralScanAPI=(()=>{
   {id:'M4',t:'FDI numbering',s:'Map each finding to a tooth number'},
   {id:'M5',t:'Risk scoring',s:'Aggregate findings into a risk level'}];
  async function req(path,opt={}){
+  if(!config.baseURL)throw new Error('This feature requires the OralScan backend. Run the local server or connect an HTTPS API using ?api=https://your-server');
   const c=new AbortController(),t=setTimeout(()=>c.abort(),config.timeout);
   try{const r=await fetch(config.baseURL+path,{...opt,signal:c.signal,headers:{...(config.token?{Authorization:'Bearer '+config.token}:{}),...(opt.headers||{})}});
    if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}finally{clearTimeout(t)}}
@@ -259,11 +264,11 @@ const OralScanAPI=(()=>{
    const fd=new FormData();for(const [i,im] of images.entries())fd.append('images',await fileBlob(im),'scan-'+i+'.jpg');
    const job=await req('/v1/analyze',{method:'POST',body:fd});let st;
    do{await sleep(600);st=await req('/v1/jobs/'+job.id);(st.stages||[]).forEach(s=>onStage&&onStage(s));if(st.status==='error')throw new Error(st.message||'Analysis failed')}while(st.status!=='done');
-   return {id:job.id,detections:normalizeYolo(st.result),risk:st.result.risk,image:images[0]&&images[0].url}}
+   return {id:job.id,detections:normalizeYolo(st.result),risk:st.result.risk,image:images[0]&&images[0].url,source:'yolov8-local',quality:st.result.quality}}
   for(const s of STAGES){onStage&&onStage({id:s.id,status:'running',progress:0});const n=6+Math.floor(Math.random()*4),t0=performance.now();
    for(let k=1;k<=n;k++){await sleep(110+Math.random()*90);onStage&&onStage({id:s.id,status:'running',progress:k/n})}
    onStage&&onStage({id:s.id,status:'done',progress:1,ms:Math.round(performance.now()-t0)})}
-  return {id:'R-'+Date.now().toString(36).toUpperCase(),detections:mockDetections(),risk:'Low',image:images[0]&&images[0].url}}
+  return {id:'R-'+Date.now().toString(36).toUpperCase(),detections:mockDetections(),risk:'Low',image:images[0]&&images[0].url,source:'demo',quality:{brightness:86,contrast:78,sharpness:82,score:82,estimated:true}}}
  // Client-side quality score (runs before upload so bad shots are rejected early)
  function assessQuality(url){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>{try{
    const W=160,H=Math.max(3,Math.round(160*im.naturalHeight/im.naturalWidth)),c=document.createElement('canvas');c.width=W;c.height=H;
@@ -275,9 +280,14 @@ const OralScanAPI=(()=>{
    const brightness=Math.round(Math.max(0,100-Math.abs(mean-140)/1.4)),contrast=Math.round(Math.min(100,sd/55*100)),sharpness=Math.round(Math.min(100,Math.sqrt(lv)/16*100));
    const score=Math.round(brightness*.3+contrast*.3+sharpness*.4);res({brightness,contrast,sharpness,score,pass:score>=60})
   }catch(e){res({brightness:86,contrast:78,sharpness:82,score:82,pass:true,estimated:true})}};im.onerror=rej;im.src=url})}
- return {config,CLASSES,STAGES,normalizeYolo,mockDetections,analyze,assessQuality,async getHome(){return DATA}}
+ return {config,CLASSES,STAGES,normalizeYolo,mockDetections,analyze,assessQuality,async getHome(){return DATA},
+  async submitCase(p){return req('/v1/cases',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})},
+  async listCases(){return req('/v1/cases')},async getCase(id){return req('/v1/cases/'+id)},
+  imageDataUrl(url){return new Promise(res=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas'),s=Math.min(1,900/im.naturalWidth);
+   c.width=Math.round(im.naturalWidth*s);c.height=Math.round(im.naturalHeight*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.85))};im.onerror=()=>res(null);im.src=url})}}
 })();
 const API=OralScanAPI,C=API.CLASSES,$=s=>document.querySelector(s);
+const modeBadge=document.createElement('span');modeBadge.className='tag';modeBadge.textContent=API.config.mock?'Demo Mode':'AI Backend';modeBadge.title=API.config.mock?'Simulated results · Dentist review requires a backend':'Connected to '+API.config.baseURL;document.querySelector('#ttl').append(' ',modeBadge);
 
 /* ---------------- App state ---------------- */
 const ZONES=[{id:'UR',t:'Upper Right',fdi:'11–18'},{id:'UF',t:'Upper Front',fdi:'13–23'},{id:'UL',t:'Upper Left',fdi:'21–28'},{id:'LR',t:'Lower Right',fdi:'41–48'},{id:'LF',t:'Lower Front',fdi:'33–43'},{id:'LL',t:'Lower Left',fdi:'31–38'}];
@@ -381,10 +391,11 @@ ${r.sample?'<span class="muted">Sample result — run a screening to see Emma’
 <section class="card"><div class="row between"><h2>Findings</h2><span class="tag blue">${r.detections.length} detected</span></div><div class="list" id="dets">${r.detections.map(d=>`<button class="det${S.hidden[d.cls]?' off':''}" data-det="${d.id}" data-cls-of="${d.cls}" style="--cc:${C[d.cls].color}" aria-pressed="${S.sel===d.id}"><span class="fdi">${d.fdi}</span><span style="flex:1;text-align:left;min-width:0"><b>${C[d.cls].label}</b><span class="muted">FDI ${d.fdi} · Confidence ${Math.round(d.conf*100)}%</span></span><span class="bar sm" style="width:56px"><i style="width:${d.conf*100}%;background:var(--cc)"></i></span></button>`).join('')}</div></section>
 <section class="card lg"><h2>Report Overview</h2><div class="row between wrap"><div><span class="muted">Selected Area</span><h3 id="selArea">Lower Molars</h3><span class="muted">Screening indication only</span></div><div class="row" style="gap:6px"><span class="tag">Risk: ${r.risk}</span><span class="tag">Quality: Good</span></div></div></section>
 <section class="card"><h2>Tooth Area Detail</h2>${teeth(true)}${legend(true)}</section>
-<section class="card"><h2>Screening Evidence</h2><b style="font-size:var(--fs-14)">Possible plaque buildup</b><div class="row wrap"><span class="tag blue">Confidence: Medium</span><span class="tag">Coverage: Complete</span></div></section>
+<section class="card"><h2>AI Evidence Chain</h2><div class="row wrap" style="gap:6px">${r.source==='demo'?'<span class="tag warn">Source: Demo Mode · simulated data</span>':'<span class="tag">Source: YOLOv8 local model</span>'}<span class="tag blue">Report ${r.id}</span><span class="tag">Risk: ${r.risk}</span></div><p class="muted" style="margin-top:8px">The original photo and raw model output are archived with the case record. Dentist revisions are stored separately — AI output is never overwritten.</p></section>
 <section class="card"><h2>What this means</h2><p class="muted">Back teeth are harder for children to clean. Guide Emma to brush this area more carefully.</p></section>
 <div class="note">${svg('info',16)}Screening results are for early awareness only, not a dental diagnosis.</div>
-<div class="bottom"><button class="btn sec" style="width:auto" ${go('summary')}>Back</button><button class="btn">Talk to a Dentist</button></div>`};
+<div class="note">${svg('info',16)}Current model scope: Caries · Cavity · Crack. Plaque / Calculus / Gingivitis detection requires the extended model (in training).</div>
+<div class="bottom"><button class="btn sec" style="width:auto" ${go('summary')}>Back</button><button class="btn" data-talk>Talk to a Dentist</button></div>`};
 function rr(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()}
 function drawReport(k=1){const img=$('#rimg'),cv=$('#rcv');if(!img||!cv||!img.naturalWidth)return;
  const W=img.clientWidth,H=img.clientHeight,dpr=devicePixelRatio||1;if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.width=W+'px';cv.style.height=H+'px'}
@@ -411,6 +422,50 @@ HOOKS.report=pg=>{const img=pg.querySelector('#rimg'),cv=pg.querySelector('#rcv'
  cv.addEventListener('pointerleave',()=>{S.hover=null;document.querySelectorAll('.det').forEach(b=>b.classList.remove('hl'));drawReport()});
  pg.querySelectorAll('.det').forEach(b=>{const on=()=>{S.hover=b.dataset.det;drawReport()},off=()=>{S.hover=null;drawReport()};b.addEventListener('pointerenter',on);b.addEventListener('pointerleave',off);b.addEventListener('focus',on);b.addEventListener('blur',off)})};
 
+/* ---------------- ⑤ Case workflow: submit → dentist review → parent view ---------------- */
+function caseChip(s){return s==='reviewed'?'<span class="tag">✓ Reviewed</span>':'<span class="tag blue">⏳ Awaiting dentist</span>'}
+async function submitCaseFlow(){const r=cur();toast('Submitting case…');
+ try{const img=await API.imageDataUrl(r.image);
+  const res=await API.submitCase({childName:'Emma',childAge:9,reportId:r.id,risk:r.risk,
+   source:r.source||(API.config.mock?'demo':'yolov8-local'),quality:r.quality||null,parentNote:'',
+   imageDataUrl:img,detections:r.detections.map(({cls,conf,fdi,box})=>({cls,conf,fdi,box}))});
+  S.caseOpen=res.id;toast('Case '+res.id+' submitted to dentist');location.hash='cases';
+ }catch(e){toast('Submit failed — '+(e.message||'server unreachable'))}}
+V.cases=()=>`<h1>Case Records</h1><p class="lead">Track submitted screenings and dentist feedback.</p>
+<button class="btn sec" id="caseBack" hidden style="width:auto;margin-bottom:10px">← Back to list</button>
+<section class="card" id="caseBody"><p class="muted">Loading…</p></section>`;
+function caseDetailHTML(c){const img=c.image_file?API.config.baseURL+'/case-img/'+c.image_file:'assets/live-preview.png';
+ const dets=c.model_output||[],rev=c.review;
+ return `<div class="row between wrap"><h2>Case ${c.id}</h2>${caseChip(c.status)}</div>
+ <img src="${img}" alt="Submitted screening photo" style="width:100%;border-radius:12px;margin:8px 0">
+ <section class="card" style="box-shadow:none;border:1px solid var(--c-border);margin:10px 0"><h2>AI Evidence Chain</h2>
+  <div class="list" style="gap:6px;margin-top:6px">
+   <div class="row between"><span class="muted">Detection source</span><b>${c.source==='demo'?'Demo Mode (simulated)':'YOLOv8 local model'}</b></div>
+   <div class="row between"><span class="muted">Analysis report</span><b>${c.reportId||'—'}</b></div>
+   <div class="row between"><span class="muted">Submitted at</span><b>${c.created_at}</b></div>
+   <div class="row between"><span class="muted">Risk level</span><b>${c.risk||'—'}</b></div>
+   <div class="row between"><span class="muted">Original photo</span><b>${c.image_file?'Saved ✓':'Not available'}</b></div></div>
+  <p class="muted" style="margin-top:8px">Raw model output is stored as-is. Dentist revisions are recorded separately — the AI result is never overwritten.</p></section>
+ <section class="card" style="box-shadow:none;border:1px solid var(--c-border);margin:10px 0"><h2>AI Original Findings (${dets.length})</h2>
+  ${dets.length?dets.map(d=>`<div class="row between" style="padding:6px 0;border-bottom:1px solid var(--c-border)"><b>${(C[d.cls]||{label:d.cls}).label} · FDI ${d.fdi}</b><span class="muted">Confidence ${Math.round(d.conf*100)}%</span></div>`).join(''):'<p class="muted">No findings.</p>'}</section>
+ <section class="card" style="box-shadow:none;border:1px solid var(--c-border);margin:10px 0"><h2>Dentist Review</h2>
+  ${rev?`<div class="list" style="gap:6px;margin-top:6px">
+   <div class="row between"><span class="muted">Dentist</span><b>${rev.dentistName||'Dentist'}</b></div>
+   <div class="row between"><span class="muted">Reviewed at</span><b>${rev.reviewed_at||''}</b></div></div>
+   ${(rev.revisions&&rev.revisions.length)?`<div style="margin-top:8px">${rev.revisions.map((v,i)=>`<div style="padding:6px 0;border-bottom:1px solid var(--c-border)"><b>#${i+1} ${v.action==='confirmed'?'✓ Confirmed':v.action==='rejected'?'✕ Rejected':'✎ Revised → '+((C[v.cls]||{label:v.cls}).label)+(v.fdi?' · FDI '+v.fdi:'')}</b>${v.note?`<span class="muted" style="display:block">${v.note}</span>`:''}</div>`).join('')}</div>`:''}
+   ${rev.note?`<p class="muted" style="margin-top:8px">💬 ${rev.note}</p>`:''}`
+  :'<p class="muted">Awaiting dentist review. Clinical feedback will appear here once reviewed.</p>'}</section>`}
+HOOKS.cases=pg=>{const body=pg.querySelector('#caseBody'),back=pg.querySelector('#caseBack');
+ async function load(){try{
+  if(S.caseOpen){const c=await API.getCase(S.caseOpen);body.innerHTML=caseDetailHTML(c);back.hidden=false}
+  else{back.hidden=true;const {cases}=await API.listCases();
+   body.innerHTML=cases.length?cases.map(c=>`<button class="det" data-case="${c.id}" style="--cc:var(--c-primary);margin-bottom:8px"><span class="fdi">${c.status==='reviewed'?'✓':'…'}</span><span style="flex:1;text-align:left;min-width:0"><b>${c.id}</b><span class="muted">${c.created_at} · ${c.child} · ${c.detections_count} findings</span></span>${caseChip(c.status)}</button>`).join('')
+   :'<p class="muted">No cases yet. Run a screening, then tap “Talk to a Dentist” to submit one.</p>'}
+ }catch(e){body.innerHTML='<p class="muted">Cannot reach case server ('+e.message+'). Start oralscan-server and retry.</p>'}}
+ back.addEventListener('click',()=>{S.caseOpen=null;load()});
+ body.addEventListener('click',e=>{const b=e.target.closest('[data-case]');if(b){S.caseOpen=b.dataset.case;load()}});
+ load()};
+
 /* ---------------- ④ Kid Pad (gamified view only) ---------------- */
 const HERO=`<svg width="150" height="150" viewBox="0 0 120 120" aria-hidden="true"><path d="M18 52 6 74l22-8z" fill="#3b82f6"/><path d="M102 52l12 22-22-8z" fill="#3b82f6"/><path d="M38 14c-14 0-22 12-19 30l7 48c2 12 13 12 15 1l5-22h28l5 22c2 11 13 11 15-1l7-48c3-18-5-30-19-30-9 0-13 5-22 5s-13-5-22-5z" fill="#fff" stroke="#bfebdd" stroke-width="3"/><circle cx="48" cy="46" r="6" fill="#111827"/><circle cx="72" cy="46" r="6" fill="#111827"/><circle cx="50" cy="44" r="2" fill="#fff"/><circle cx="74" cy="44" r="2" fill="#fff"/><path d="M48 60q12 10 24 0" stroke="#111827" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="38" cy="58" r="5" fill="#fda4af" opacity=".7"/><circle cx="82" cy="58" r="5" fill="#fda4af" opacity=".7"/><path d="M60 22l3 6 6 1-4.5 4 1 6-5.5-3-5.5 3 1-6-4.5-4 6-1z" fill="#fbbf24"/></svg>`;
 V.kid=()=>`<div class="kidv"><div class="hero-t">${HERO}</div><h1><span id="kmsg">Hi Hero!</span></h1><p class="lead" id="ksub">Get ready for your tooth adventure.</p>
@@ -432,6 +487,7 @@ document.addEventListener('click',async e=>{
  const v=e.target.closest('[data-view]');if(v){S.heat=v.dataset.view==='heat';document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-selected',b===v));animateReport();return}
  const fc=e.target.closest('[data-cls]');if(fc){const k=fc.dataset.cls;S.hidden[k]=!S.hidden[k];fc.setAttribute('aria-pressed',!S.hidden[k]);document.querySelectorAll(`[data-cls-of="${k}"]`).forEach(b=>b.classList.toggle('off',!!S.hidden[k]));if(S.sel&&cur().detections.find(d=>d.id===S.sel).cls===k)selectDet(S.sel);drawReport();return}
  const dt=e.target.closest('[data-det]');if(dt){selectDet(dt.dataset.det);return}
+ if(e.target.closest('[data-talk]')){submitCaseFlow();return}
  if(e.target.closest('#kidBtn')){window.open(location.pathname+'#kid','oralscan-kid');return}
  if(e.target.closest('#kidReady')){send({type:'kid-ready'});e.target.closest('#kidReady').textContent='Yay! Waiting for grown-up…';return}
 });

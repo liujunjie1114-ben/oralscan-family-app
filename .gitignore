@@ -19,3 +19,12 @@ logs/
 # beside it.
 /.plugins/
 /.opencode-skills/
+
+# Local runtime and generated files
+oralscan-server/data/
+__pycache__/
+.venv/
+oralscan-train/datasets/
+oralscan-train/runs/
+docs-script-check.cjs
+deployment-preview.png

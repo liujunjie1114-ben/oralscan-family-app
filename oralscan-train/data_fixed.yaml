@@ -1,0 +1,18 @@
+names:
+- calculus
+- caries
+- gingivitis
+- hypodontia
+- tooth_discolation
+- ulcer
+nc: 6
+path: ''
+roboflow:
+  license: CC BY 4.0
+  project: oral-diseases-rmzuw
+  url: https://universe.roboflow.com/gilang-pappa-tanto-pambua-zplqr/oral-diseases-rmzuw/dataset/1
+  version: 1
+  workspace: gilang-pappa-tanto-pambua-zplqr
+test: C:/Users/20106/WorkBuddy/2026-10-25-16-35-34/oralscan-train/datasets/oral-disease-23k/datasets/test/images
+train: C:/Users/20106/WorkBuddy/2026-10-25-16-35-34/oralscan-train/datasets/oral-disease-23k/datasets/train/images
+val: C:/Users/20106/WorkBuddy/2026-10-25-16-35-34/oralscan-train/datasets/oral-disease-23k/datasets/valid/images
