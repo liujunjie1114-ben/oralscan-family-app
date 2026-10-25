@@ -1,0 +1,10 @@
+{
+  "description": "A parent-focused oral health app for tracking children’s dental care, viewing tooth scan results, and monitoring progress in one place.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

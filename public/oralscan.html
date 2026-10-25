@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OralScan · Tooth Hero Parent App</title>
+<style>
+:root{
+--c-text:#111827;--c-muted:#667085;--c-subtle:#98a2b3;--c-border:#e6ecf2;--c-bg:#eef2f6;--c-surface:#fff;
+--c-primary:#3b82f6;--c-primary-soft:#eff6ff;--c-primary-tint:#eef5ff;
+--c-success:#10b981;--c-success-2:#34d399;--c-success-soft:#ecfdf5;--c-success-tint:#e8faf2;--c-success-line:#bfebdd;--c-warn:#f59e0b;
+--fs-11:11.5px;--fs-12:12px;--fs-13:13px;--fs-14:14px;--fs-15:15px;--fs-16:16px;--fs-17:17px;--fs-28:28px;
+--r-4:4px;--r-15:15px;--r-16:16px;--r-22:22px;--r-pill:999px;
+--sh-1:0 4px 8px rgba(15,23,42,.04);--sh-2:0 8px 11px rgba(15,23,42,.05);--sh-3:0 10px 13px rgba(15,23,42,.05);
+--sp-4:4px;--sp-8:8px;--sp-12:12px;--sp-16:16px;--sp-20:20px;--sp-24:24px;
+--t:180ms cubic-bezier(.2,.7,.3,1);
+--font:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro","Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box;margin:0}
+body{font-family:var(--font);color:var(--c-text);background:var(--c-surface);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--c-primary);outline-offset:2px}
+.app{min-height:100dvh;display:flex;flex-direction:column;max-width:720px;margin:0 auto}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-12);padding:var(--sp-16) var(--sp-20) var(--sp-8)}
+.chip{display:inline-flex;align-items:center;gap:var(--sp-8);padding:6px 10px 6px 6px;border:1px solid var(--c-border);border-radius:var(--r-pill);font-size:var(--fs-12);font-weight:600;background:var(--c-surface);transition:var(--t);white-space:nowrap}
+.chip:hover{border-color:var(--c-primary);background:var(--c-primary-soft)}
+.avatar{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#fde68a,#f9a8d4)}
+main{flex:1;padding:0 var(--sp-20) 110px;position:relative}
+.page{display:none;flex-direction:column;gap:var(--sp-16)}
+.page.active{display:flex;animation:pageIn 260ms var(--t) both}
+@keyframes pageIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+.stg>*{opacity:0;animation:up 420ms cubic-bezier(.2,.7,.3,1) forwards;animation-delay:calc(var(--i,0)*60ms)}
+@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+h1{font-size:var(--fs-28);line-height:36px;font-weight:800;letter-spacing:-.02em}
+.lead{font-size:var(--fs-14);line-height:22px;color:var(--c-muted)}
+h2{font-size:var(--fs-17);font-weight:700;line-height:24px}
+h3{font-size:var(--fs-15);font-weight:700;line-height:20px}
+.muted{color:var(--c-muted);font-size:var(--fs-12);line-height:17px}
+.card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-16);padding:var(--sp-16);box-shadow:var(--sh-1);display:flex;flex-direction:column;gap:var(--sp-12)}
+.card.lg{border-radius:var(--r-22);box-shadow:var(--sh-3)}
+.tap{transition:transform var(--t),box-shadow var(--t),border-color var(--t),background var(--t);cursor:pointer;text-align:left}
+.tap:hover{box-shadow:var(--sh-2);border-color:#cfd9e4;transform:translateY(-1px)}
+.tap:active{transform:scale(.98)}
+.hero{background:linear-gradient(160deg,var(--c-success-tint),#fafefe);border-color:var(--c-success-line)}
+.row{display:flex;align-items:center;gap:var(--sp-12)}.between{justify-content:space-between}.wrap{flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-12)}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:var(--r-pill);font-size:var(--fs-12);font-weight:600;background:var(--c-success-soft);color:var(--c-success);border:1px solid var(--c-success-line);white-space:nowrap}
+.tag.blue{background:var(--c-primary-soft);color:var(--c-primary);border-color:#cfe0fd}
+.tag.gray{background:var(--c-bg);color:var(--c-muted);border-color:var(--c-border)}
+.btn{display:flex;align-items:center;justify-content:center;gap:var(--sp-8);height:48px;padding:0 var(--sp-20);border-radius:var(--r-15);font-size:var(--fs-15);font-weight:700;background:var(--c-primary);color:#fff;transition:var(--t);width:100%;box-shadow:0 8px 16px rgba(59,130,246,.25)}
+.btn:hover{background:#2f74e6}.btn:active{transform:scale(.98)}
+.btn.ghost{background:transparent;color:var(--c-primary);box-shadow:none;height:40px}
+.btn.ghost:hover{background:var(--c-primary-soft)}
+.btn.sec{background:var(--c-bg);color:var(--c-text);box-shadow:none}
+.btn:disabled{background:#c7d2e0;color:#fff;box-shadow:none;cursor:not-allowed;transform:none}
+.btn.loading{pointer-events:none;opacity:.85}
+.btn.loading::before{content:"";width:16px;height:16px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.media{flex:none;display:grid;place-items:center;overflow:hidden;border-radius:var(--r-16);background:linear-gradient(160deg,var(--c-success-tint),#fafefe)}
+.media img{display:block;width:100%;height:100%;object-fit:contain;border-radius:inherit}
+.hero-img{width:88px;height:128px}
+.media.img-failed{background:linear-gradient(135deg,var(--c-success-tint),var(--c-primary-tint))}
+.ico{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:var(--c-primary-soft);color:var(--c-primary);flex:none}
+.ico.g{background:var(--c-success-soft);color:var(--c-success)}
+.ph{background:repeating-linear-gradient(45deg,var(--c-bg) 0 10px,#f6f8fb 10px 20px);border-radius:var(--r-16);display:grid;place-items:center;color:var(--c-subtle);font-size:var(--fs-12);min-height:120px;text-align:center}
+.bar{height:8px;background:var(--c-bg);border-radius:var(--r-pill);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--c-primary),#60a5fa);border-radius:inherit;transition:width 1s cubic-bezier(.2,.7,.3,1)}
+.segs{display:flex;gap:4px;flex:1}.segs i{flex:1;height:6px;border-radius:var(--r-4);background:var(--c-border);transition:background .4s}.segs i.on{background:var(--c-success-2)}
+.list{display:flex;flex-direction:column;gap:var(--sp-8)}
+.li{display:flex;align-items:center;gap:var(--sp-12);padding:10px 0;border-top:1px solid var(--c-border)}.li:first-child{border-top:0}
+.li b{font-size:var(--fs-14);font-weight:600;display:block}
+.check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--c-border);display:grid;place-items:center;flex:none;transition:var(--t);color:#fff}
+.check.on{background:var(--c-success);border-color:var(--c-success)}
+.rc{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--c-border);border-radius:12px;font-size:var(--fs-13);font-weight:500;transition:var(--t)}
+.rc:hover{border-color:var(--c-success-line)}.rc[aria-pressed=true]{background:var(--c-success-soft);border-color:var(--c-success-line)}
+.rc[aria-pressed=true] .check{background:var(--c-success);border-color:var(--c-success)}
+.big{font-size:var(--fs-28);font-weight:800;color:var(--c-primary)}
+.note{background:var(--c-primary-tint);border-radius:12px;padding:12px;font-size:var(--fs-12);line-height:18px;color:var(--c-muted);display:flex;gap:8px}
+input.f{width:100%;height:44px;border:1px solid var(--c-border);border-radius:12px;padding:0 12px;font:inherit;font-size:var(--fs-14);transition:var(--t)}
+input.f:focus{outline:0;border-color:var(--c-primary);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+.teeth{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.tooth{width:28px;height:32px;border-radius:10px 10px 12px 12px;border:1.5px solid var(--c-success-line);background:var(--c-success-soft);transition:var(--t)}
+.tooth.warn{background:#fff7ed;border-color:#fcd34d}.tooth.sel{box-shadow:0 0 0 3px var(--c-primary)}
+.tooth:hover{transform:translateY(-2px)}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--c-border);display:flex;justify-content:center;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+nav.tabs .in{display:flex;gap:4px;width:100%;max-width:720px;overflow-x:auto}
+.tab{flex:1;min-width:58px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border-radius:12px;font-size:11px;font-weight:600;color:var(--c-subtle);transition:var(--t)}
+.tab:hover{color:var(--c-text);background:var(--c-bg)}.tab[aria-current=page]{color:var(--c-primary);background:var(--c-primary-soft)}
+.cam{position:relative;border-radius:var(--r-16);min-height:180px;background:linear-gradient(135deg,#fde2e4,#f9c6cf);overflow:hidden;display:grid;place-items:center}
+.cam .frame{width:60%;height:60%;border:2px dashed rgba(255,255,255,.9);border-radius:16px;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.04);border-color:var(--c-success-2)}}
+.cam .tip{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(17,24,39,.75);color:#fff;padding:8px 14px;border-radius:12px;text-align:center;font-size:var(--fs-13);font-weight:700;white-space:nowrap}
+.cam .tip small{display:block;font-weight:500;font-size:11px;opacity:.8}
+.cam .live{position:absolute;top:10px;left:10px}
+.bottom{display:flex;gap:var(--sp-12)}
+@media(min-width:720px){.grid-md{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-16)}}
+.spin{width:16px;height:16px;border:2px solid var(--c-border);border-top-color:var(--c-primary);border-radius:50%;animation:spin .7s linear infinite;flex:none}
+.tag.warn{background:#fff7ed;color:#c2410c;border-color:#fed7aa}
+.cam img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam .frame{position:relative}
+.zones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-8)}
+.zone{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border:1px solid var(--c-border);border-radius:var(--r-16);font-size:var(--fs-12);font-weight:600;transition:var(--t);text-align:center}
+.zone:hover{border-color:var(--c-success-line);background:var(--c-success-soft)}.zone:active{transform:scale(.97)}
+.zone[aria-pressed=true]{border-color:var(--c-primary);background:var(--c-primary-soft)}
+.zone small{font-size:11px;color:var(--c-muted);font-weight:500}
+.rg{transition:stroke-dashoffset .9s cubic-bezier(.2,.7,.3,1)}
+.qgrid{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--sp-16);align-items:center}
+.qscore{display:flex;flex-direction:column;align-items:center;width:76px;height:76px;justify-content:center;border-radius:50%;background:var(--c-primary-soft)}
+.qscore small{font-size:11px;color:var(--c-muted)}
+.qrow{display:grid;grid-template-columns:72px minmax(0,1fr) 28px;align-items:center;gap:8px;font-size:var(--fs-12)}
+.bar.sm{height:6px;display:block}
+.btn:disabled.sec{background:var(--c-bg);color:var(--c-subtle)}
+.pipe{list-style:none;padding:0;display:flex;flex-direction:column}
+.step{display:flex;gap:var(--sp-12);position:relative;padding-bottom:var(--sp-16)}
+.step:not(:last-child)::after{content:"";position:absolute;left:17px;top:40px;bottom:2px;width:2px;background:var(--c-border);transition:background .3s}
+.step.done::after{background:var(--c-success-2)}
+.sdot{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:var(--fs-12);font-weight:800;background:var(--c-bg);color:var(--c-muted);flex:none;transition:var(--t)}
+.step.run .sdot{background:var(--c-primary);color:#fff;animation:ping 1.2s infinite}
+.step.done .sdot{background:var(--c-success);color:#fff}
+@keyframes ping{from{box-shadow:0 0 0 0 rgba(59,130,246,.45)}to{box-shadow:0 0 0 10px rgba(59,130,246,0)}}
+.sbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.sbody b{font-size:var(--fs-14)}
+.sbody .bar i{transition:width .2s}.step.done .bar i{background:var(--c-success-2)}
+.log{font:12px/18px ui-monospace,Menlo,monospace;background:var(--c-text);color:#d1fae5;border-radius:12px;padding:12px;height:140px;overflow:auto;white-space:pre-wrap}
+.viewer{position:relative;border-radius:var(--r-16);overflow:hidden;background:linear-gradient(135deg,var(--c-bg),var(--c-primary-tint));min-height:160px}
+.viewer img{display:block;width:100%;height:auto}
+.viewer canvas{position:absolute;left:0;top:0}
+.seg{display:flex;background:var(--c-bg);border-radius:var(--r-pill);padding:3px}
+.seg button{padding:6px 12px;border-radius:var(--r-pill);font-size:var(--fs-12);font-weight:600;color:var(--c-muted);transition:var(--t)}
+.seg button:hover{color:var(--c-text)}.seg button[aria-selected=true]{background:var(--c-surface);color:var(--c-text);box-shadow:var(--sh-1)}
+.fchip{background:var(--c-surface);color:var(--c-text);border-color:var(--c-border);cursor:pointer;transition:var(--t)}
+.fchip:hover{border-color:var(--cc)}.fchip i{width:8px;height:8px;border-radius:50%;background:var(--cc)}
+.fchip[aria-pressed=false]{opacity:.45;text-decoration:line-through}
+.det{display:flex;align-items:center;gap:var(--sp-12);padding:10px;border:1px solid var(--c-border);border-left:4px solid var(--cc);border-radius:12px;transition:var(--t);width:100%}
+.det:hover,.det.hl{background:var(--c-bg)}.det:active{transform:scale(.99)}
+.det[aria-pressed=true]{border-color:var(--cc);box-shadow:0 0 0 3px color-mix(in srgb,var(--cc) 20%,transparent)}
+.det.off{opacity:.4}.det b{font-size:var(--fs-14);display:block}
+.fdi{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:var(--fs-13);color:var(--cc);background:color-mix(in srgb,var(--cc) 12%,#fff);flex:none}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--c-subtle);transition:var(--t)}.dot.on{background:var(--c-success)}
+.toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,16px);background:var(--c-text);color:#fff;padding:10px 16px;border-radius:12px;font-size:var(--fs-13);opacity:0;transition:var(--t);pointer-events:none;z-index:9;max-width:calc(100% - 40px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+body.kid header.top,body.kid nav.tabs{display:none}
+body.kid{background:linear-gradient(180deg,var(--c-success-tint),var(--c-primary-tint))}
+body.kid main{padding:var(--sp-24) var(--sp-20)}
+.kidv{display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--sp-16);min-height:calc(100dvh - 48px);justify-content:center}
+.kidv h1{font-size:34px;line-height:42px}
+.hero-t svg{animation:bob 2.4s ease-in-out infinite}@keyframes bob{50%{transform:translateY(-10px) rotate(-3deg)}}
+.stars{display:flex;gap:var(--sp-8);flex-wrap:wrap;justify-content:center;color:#d4dde7}
+.star{display:inline-flex;transition:color .3s}.star.on{color:#fbbf24;animation:pop .45s}@keyframes pop{50%{transform:scale(1.35)}}
+.kbar{width:min(420px,100%);height:14px}.kbar i{background:linear-gradient(90deg,var(--c-success-2),#fbbf24)}
+.guide-img{width:100%;max-height:180px;object-fit:contain;border-radius:var(--r-16);background:var(--c-bg)}
+.setup-img{display:block;width:100%;height:auto;border-radius:var(--r-16)}
+@media(max-width:400px){.kid-lbl{display:none}.zone small{display:none}}
+.det .bar{flex:none;width:56px}.det .bar i{display:block;height:100%;border-radius:inherit;animation:fill 1s .3s cubic-bezier(.2,.7,.3,1) both}@keyframes fill{from{width:0}}
+.sbody .row{align-items:flex-start}.sstat{white-space:nowrap;flex:none}
+.btn.sm{padding:0 var(--sp-12);font-size:var(--fs-14);white-space:nowrap}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.stg>*{opacity:1}}
+</style></head>
+<body><div class="app">
+<header class="top"><strong id="ttl" style="font-size:var(--fs-17)">OralScan</strong>
+<div class="row" style="gap:8px"><button class="chip" id="kidBtn" aria-label="Open Kid Pad view"><span class="dot" id="kidDot"></span><span class="kid-lbl">Kid Pad</span></button><button class="chip" aria-label="Switch child profile"><span class="avatar"></span>Emma · Age 9 <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 4l3 3 3-3" stroke="currentColor" fill="none" stroke-width="1.5"/></svg></button></div></header>
+<main id="main"></main>
+<nav class="tabs" aria-label="Primary"><div class="in" id="tabs"></div></nav>
+</div>
+<script>
+const I={up:'<path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',cam:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" fill="currentColor" stroke="none"/>',home:'<path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',scan:'<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 12h8"/>',rep:'<path d="M6 3h9l4 4v14H6zM9 12h7M9 16h5"/>',me:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',check:'<path d="M5 12l4 4 10-10"/>',chev:'<path d="M9 6l6 6-6 6"/>',bt:'<path d="M7 7l10 10-5 4V3l5 4L7 17"/>',pow:'<path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/>',chat:'<path d="M4 5h16v11H9l-5 4z"/>',kid:'<circle cx="12" cy="7" r="3"/><path d="M6 21v-5a6 6 0 0 1 12 0v5"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 8h0M12 11v5"/>',cal:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',tooth:'<path d="M7 3c-3 0-4 3-3 7l2 10c.5 2 2.5 2 3 0l1-5h4l1 5c.5 2 2.5 2 3 0l2-10c1-4 0-7-3-7-2 0-3 1-5 1S9 3 7 3z"/>'};
+const svg=(n,s=18)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]}</svg>`;
+/* ---- Data (replace with API) ---- */
+const DATA={
+ quick:[{t:'Reports',i:'rep'},{t:'Consultation',i:'chat'},{t:'Screening Records',i:'cal'},{t:'Child Profiles',i:'kid'}],
+ steps:[{t:'Turn on the device',s:'Powered on',i:'pow',done:1},{t:'Enable Bluetooth',s:'Bluetooth enabled',i:'bt',done:1},{t:'Pair device',s:'OralScan Pro found',i:'scan',active:1}],
+ guide:[{n:'01',t:'Hold the scanner steadily.'},{n:'02',t:'Keep the camera tip close to the teeth.'}],
+ ready:[{t:'Scanner connected',on:1},{t:'Tablet ready',on:1},{t:'Child seated'},{t:'Mouth clean'},{t:'Good lighting'}],
+ coverage:[{t:'Upper teeth',d:3,n:6},{t:'Lower teeth',d:0,n:6}],
+ findings:[{t:'Back teeth need attention',s:'Guide Emma to brush the lower molars more carefully.',c:'#f59e0b'},{t:'Image quality is good',s:'The scan captured all required areas.',c:'#10b981'},{t:'Recheck in 14 days',s:'Track whether the attention area improves.',c:'#3b82f6'}],
+ teeth:Array.from({length:16},(_,i)=>({id:i,warn:[12,13,14].includes(i)}))
+};
+const PAGES=[{id:'home',t:'Home',i:'home'},{id:'connect',t:'Device',i:'bt'},{id:'precheck',t:'Pre-check',i:'info'},{id:'screening',t:'Screening',i:'scan'},{id:'summary',t:'Summary',i:'rep'},{id:'report',t:'Report',i:'tooth'}];
+const go=id=>`data-go="${id}"`;
+const V={
+home:()=>`<h1>Good morning, Ms. Li</h1>
+<section class="card lg hero"><span class="tag" style="align-self:flex-start">Today’s Task</span>
+<div class="row between" style="align-items:flex-start"><div style="display:flex;flex-direction:column;gap:8px"><h2 style="font-size:var(--fs-28);line-height:34px;font-weight:800">Today’s Oral Check is Due</h2><p class="lead">A quick screening helps identify early oral risks before they become painful.</p></div><div class="media hero-img"><img src="assets/scanner.png" alt="Kids Oral Scanner" width="88" height="128" onerror="this.parentNode.classList.add('img-failed');this.remove()"></div></div>
+<div class="row wrap" style="gap:16px;font-size:var(--fs-12);font-weight:600"><span class="row" style="gap:4px;color:var(--c-success)">${svg('check',14)}Ready</span><span class="row" style="gap:4px">${svg('pow',14)}Battery 82%</span><span class="row" style="gap:4px">${svg('bt',14)}Connected</span></div>
+<button class="btn" ${go('connect')}>Start Oral Screening Today</button></section>
+<div class="grid2"><button class="card tap" ${go('report')}><span class="ico">${svg('rep')}</span><b style="font-size:var(--fs-14)">View Last Report</b><span class="muted">Review the latest summary</span></button>
+<button class="card tap" ${go('precheck')}><span class="ico g">${svg('cal')}</span><b style="font-size:var(--fs-14)">Next Check in <span data-count="12">0</span> days</b><span class="muted">2006.06.05</span></button></div>
+<button class="card tap row" ${go('summary')} style="flex-direction:row"><span class="avatar" style="width:44px;height:44px"></span><div style="flex:1;min-width:0"><h3>Emma · Age 9</h3><p class="muted" style="font-size:var(--fs-11)">Last Screening : 2026.05.12</p><p class="muted">Oral health trend : <b style="color:var(--c-success)">Improving</b></p></div><span class="tag">Low Risk</span></button>
+<section class="card"><h2>Quick Access</h2><div class="grid2">${DATA.quick.map(q=>`<button class="rc tap" ${go('report')}><span class="ico" style="width:28px;height:28px">${svg(q.i,14)}</span><span style="flex:1">${q.t}</span>${svg('chev',14)}</button>`).join('')}</div></section>`,
+connect:()=>`<h1>Connect Screening Device</h1><p class="lead">Pair the oral scanner before starting Emma’s screening.</p>
+<section class="card lg hero row between" style="flex-direction:row"><div><h2>Kids Oral Scanner</h2><span class="tag" style="margin-top:8px">Ready to pair</span></div><div class="ph" style="min-width:80px;min-height:110px">Scanner</div></section>
+<section class="card"><h2>Connection Status</h2><div class="list">${DATA.steps.map(s=>`<div class="li"><span class="ico ${s.done?'g':''}">${svg(s.i,16)}</span><div style="flex:1"><b>${s.t}</b><span class="muted">${s.s}</span></div>${s.active?'<span class="tag blue">Active</span>':`<span class="check on">${svg('check',12)}</span>`}</div>`).join('')}</div>
+<div class="row wrap between muted" style="font-weight:600"><span>Battery <span data-count="82">0</span>%</span><span>Connected</span><span>Camera Ready</span></div></section>
+<section class="card hero row" style="flex-direction:row"><div style="flex:1"><span class="muted" style="color:var(--c-success);font-weight:700">Device Found</span><h3>OralScan Pro-02</h3><span class="muted">Connected successfully</span></div><span class="check on" style="width:32px;height:32px">${svg('check',16)}</span></section>
+<button class="btn" data-load="precheck">Continue to Pre-check</button><button class="btn ghost" data-load="connect">Retry Connection</button><p class="muted" style="text-align:center">Having trouble? Check Bluetooth and device power.</p>`,
+precheck:()=>{const done=DATA.ready.filter(r=>r.on).length;return `<h1>Pre-check Preparation</h1><p class="lead">Make sure Emma is comfortable and everything is ready before scanning.</p>
+<div><p class="muted" style="font-weight:700;letter-spacing:.04em">PREPARATION · STEP 1 OF 3</p><div class="bar" style="margin-top:8px"><i data-w="33"></i></div></div>
+<section class="card lg"><img class="setup-img" src="assets/setup.png" alt="Child watching the tablet during a scan" onerror="this.outerHTML='<div class=ph>Screening Setup</div>'"><h3>Screening Setup</h3><p class="muted">Let your child watch the tablet while you complete the scan.</p></section>
+<section class="card"><h2>Operation Guide</h2><img class="guide-img" src="assets/guide-hand.png" alt="Hand holding the scanner at the correct angle" onerror="this.remove()">${DATA.guide.map(g=>`<div class="row"><span class="tag blue">${g.n}</span><span style="font-size:var(--fs-13)">${g.t}</span></div>`).join('')}</section>
+<section class="card"><div class="row between"><h2>Ready Check</h2><span class="tag blue" id="rcount">${done} / ${DATA.ready.length} completed</span></div>
+<div class="grid2">${DATA.ready.map((r,i)=>`<button class="rc" data-rc="${i}" aria-pressed="${!!r.on}"><span class="check">${svg('check',12)}</span>${r.t}</button>`).join('')}</div>
+<label class="muted" for="nt">Note for this session (optional)</label><input class="f" id="nt" placeholder="e.g. Emma brushed 10 minutes ago"></section>
+<div class="note" style="background:var(--c-success-soft)">${svg('info',16)}The scan usually takes about 60–90 seconds.</div>
+<button class="btn" id="startLive" data-load="screening" ${done<DATA.ready.length?'disabled':''}>Start Live Screening</button>
+<p class="muted" style="text-align:center" id="rhint">${done<DATA.ready.length?'Complete all ready checks to continue.':''}</p>`},
+screening:()=>`<h1>Live Screening</h1><p class="lead">Keep the scanner steady and follow the real-time guidance.</p>
+<section class="card"><div class="row between"><h2>Scan Progress</h2><span class="big"><span data-count="42">0</span>%</span></div><div class="bar"><i data-w="42"></i></div><div class="row between wrap"><span class="muted">Upper teeth · 3 / 6 areas scanned</span><span class="tag">Image quality: Good</span></div></section>
+<section class="card"><div class="row between"><h2>Live Camera Preview</h2><span class="tag gray">HD 1080P</span></div><div class="cam"><span class="tag live">● Live</span><div class="frame"></div><div class="tip">Move slightly closer<small>Hold steady for 2 seconds</small></div></div></section>
+<section class="card"><h2>Current Guidance</h2><b style="color:var(--c-primary);font-size:var(--fs-14)">Current Area: Upper Right Molars</b><p class="muted">Keep the camera tip 1–2 cm from the teeth.<br>Rotate gently until the focus frame turns green.</p><div class="row"><span class="tag">Hold steady</span><span class="tag blue">Angle left</span></div></section>
+<section class="card"><h2>Coverage Status</h2>${DATA.coverage.map(c=>`<div class="row"><span style="font-size:var(--fs-13);font-weight:600;width:84px">${c.t}</span><span class="muted" style="width:32px">${c.d} / ${c.n}</span><div class="segs">${Array.from({length:c.n},(_,i)=>`<i data-on="${i<c.d}"></i>`).join('')}</div></div>`).join('')}</section>
+<div class="bottom"><button class="btn sec" style="width:auto" id="pause">Pause</button><button class="btn" ${go('summary')}>Continue Scanning</button></div><button class="btn ghost" ${go('summary')}>End screening</button>`,
+summary:()=>`<h1>Screening Summary</h1><p class="lead">Emma’s oral scan is complete. Review the key findings and next steps.</p>
+<section class="card lg hero"><div class="row between"><span class="tag">Scan Complete</span><span class="tag">Low Risk</span></div><h2>Preliminary Risk: Low</h2><p class="muted">Most areas look healthy. Back-tooth areas may need more brushing attention.</p><div class="row wrap" style="gap:8px"><span class="tag gray">Coverage <span data-count="96">0</span>%</span><span class="tag gray">Image Quality Good</span><span class="tag gray">12 / 12 Areas</span></div></section>
+<section class="card tap" ${go('report')} tabindex="0" role="button"><h2>Tooth Map Preview</h2><p class="muted">Lower molars may need more careful brushing.</p>${teeth(false)}${legend()}</section>
+<section class="card"><h2>Key Findings &amp; Next Steps</h2><div class="list">${DATA.findings.map(f=>`<div class="li"><span style="width:10px;height:10px;border-radius:50%;background:${f.c};flex:none"></span><div><b>${f.t}</b><span class="muted">${f.s}</span></div></div>`).join('')}</div></section>
+<div class="note">${svg('info',16)}This screening supports early risk awareness and does not replace a dentist’s diagnosis.</div>
+<button class="btn" ${go('report')}>View Detailed Report</button><button class="btn ghost">Talk to a Dentist</button>`,
+report:()=>`<h1>Detailed Report</h1><p class="lead">Review Emma’s attention areas and follow-up suggestions.</p>
+<section class="card lg"><h2>Report Overview</h2><div class="row between wrap"><div><span class="muted">Selected Area</span><h3 id="selArea">Lower Molars</h3><span class="muted">Screening indication only</span></div><div class="row" style="gap:6px"><span class="tag">Risk: Low</span><span class="tag">Quality: Good</span></div></div></section>
+<section class="card"><h2>Tooth Area Detail</h2>${teeth(true)}${legend(true)}</section>
+<section class="card"><h2>Screening Evidence</h2><div class="ph">Captured image preview</div><b style="font-size:var(--fs-14)">Possible plaque buildup</b><div class="row wrap"><span class="tag blue">Confidence: Medium</span><span class="tag">Coverage: Complete</span></div></section>
+<section class="card"><h2>What this means</h2><p class="muted">Back teeth are harder for children to clean. Guide Emma to brush this area more carefully.</p></section>
+<div class="note">${svg('info',16)}Screening results are for early awareness only, not a dental diagnosis.</div>
+<div class="bottom"><button class="btn sec" style="width:auto" ${go('summary')}>Back</button><button class="btn">Talk to a Dentist</button></div>`
+};
+function teeth(sel){return `<div class="teeth">${DATA.teeth.map(t=>`<button class="tooth ${t.warn?'warn':''} ${sel&&t.id===13?'sel':''}" aria-label="Tooth ${t.id+1}${t.warn?', may need attention':''}" data-tooth="${t.id}"></button>`).join('')}</div>`}
+function legend(sel){return `<div class="row wrap muted" style="gap:12px"><span>● Healthy</span><span style="color:#d97706">● ${sel?'May need attention':'Needs attention'}</span><span>${sel?'○ Selected':'○ Not reviewed'}</span></div>`}
+/* ================================================================
+ * OralScanAPI — single data boundary for the app.
+ * Set OralScanAPI.config.mock=false and baseURL to use a real YOLOv8 backend.
+ * Expected backend contract:
+ *   POST {baseURL}/v1/analyze  (multipart "images")      -> { id }
+ *   GET  {baseURL}/v1/jobs/:id                           -> { status:'running'|'done'|'error',
+ *          stages:[{id:'M1'..'M5',status,progress,ms}],
+ *          result:{ risk, image:{width,height},
+ *                   detections:[{class_name,confidence,fdi,box:{x1,y1,x2,y2}}] } }
+ *   (detections follow the Ultralytics YOLOv8 results JSON; normalizeYolo() adapts them)
+ * ================================================================ */
+const OralScanAPI=(()=>{
+ const config={baseURL:'',mock:true,timeout:30000,token:''};
+ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+ const CLASSES={caries:{label:'Caries',color:'#ef4444'},plaque:{label:'Plaque',color:'#f59e0b'},calculus:{label:'Calculus',color:'#8b5cf6'},gingivitis:{label:'Gingivitis',color:'#ec4899'}};
+ const STAGES=[
+  {id:'M1',t:'Image quality gate',s:'Blur, exposure and coverage check'},
+  {id:'M2',t:'Tooth segmentation',s:'Locate each tooth region'},
+  {id:'M3',t:'Lesion detection · YOLOv8',s:'Caries, plaque, calculus, gingivitis'},
+  {id:'M4',t:'FDI numbering',s:'Map each finding to a tooth number'},
+  {id:'M5',t:'Risk scoring',s:'Aggregate findings into a risk level'}];
+ async function req(path,opt={}){
+  const c=new AbortController(),t=setTimeout(()=>c.abort(),config.timeout);
+  try{const r=await fetch(config.baseURL+path,{...opt,signal:c.signal,headers:{...(config.token?{Authorization:'Bearer '+config.token}:{}),...(opt.headers||{})}});
+   if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}finally{clearTimeout(t)}}
+ // Ultralytics YOLOv8 JSON -> app model (normalized [x,y,w,h] boxes)
+ function normalizeYolo(raw){const W=raw.image.width,H=raw.image.height;
+  return raw.detections.map((d,i)=>({id:'d'+i,cls:d.class_name,conf:d.confidence,fdi:String(d.fdi??''),box:[d.box.x1/W,d.box.y1/H,(d.box.x2-d.box.x1)/W,(d.box.y2-d.box.y1)/H]}))}
+ function mockDetections(){return [
+  {id:'d0',cls:'plaque',conf:.87,fdi:'36',box:[.29,.52,.12,.15]},
+  {id:'d1',cls:'caries',conf:.72,fdi:'46',box:[.47,.60,.11,.14]},
+  {id:'d2',cls:'calculus',conf:.64,fdi:'31',box:[.38,.70,.10,.10]},
+  {id:'d3',cls:'gingivitis',conf:.58,fdi:'16',box:[.33,.20,.14,.11]}]}
+ async function fileBlob(im){if(im.blob)return im.blob;const r=await fetch(im.url);return r.blob()}
+ async function analyze(images,{onStage}={}){
+  if(!config.mock){
+   const fd=new FormData();for(const [i,im] of images.entries())fd.append('images',await fileBlob(im),'scan-'+i+'.jpg');
+   const job=await req('/v1/analyze',{method:'POST',body:fd});let st;
+   do{await sleep(600);st=await req('/v1/jobs/'+job.id);(st.stages||[]).forEach(s=>onStage&&onStage(s));if(st.status==='error')throw new Error(st.message||'Analysis failed')}while(st.status!=='done');
+   return {id:job.id,detections:normalizeYolo(st.result),risk:st.result.risk,image:images[0]&&images[0].url}}
+  for(const s of STAGES){onStage&&onStage({id:s.id,status:'running',progress:0});const n=6+Math.floor(Math.random()*4),t0=performance.now();
+   for(let k=1;k<=n;k++){await sleep(110+Math.random()*90);onStage&&onStage({id:s.id,status:'running',progress:k/n})}
+   onStage&&onStage({id:s.id,status:'done',progress:1,ms:Math.round(performance.now()-t0)})}
+  return {id:'R-'+Date.now().toString(36).toUpperCase(),detections:mockDetections(),risk:'Low',image:images[0]&&images[0].url}}
+ // Client-side quality score (runs before upload so bad shots are rejected early)
+ function assessQuality(url){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>{try{
+   const W=160,H=Math.max(3,Math.round(160*im.naturalHeight/im.naturalWidth)),c=document.createElement('canvas');c.width=W;c.height=H;
+   const x=c.getContext('2d');x.drawImage(im,0,0,W,H);const d=x.getImageData(0,0,W,H).data,L=new Float32Array(W*H);let sum=0;
+   for(let i=0;i<W*H;i++){L[i]=.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2];sum+=L[i]}
+   const mean=sum/L.length;let v=0;for(const l of L)v+=(l-mean)**2;const sd=Math.sqrt(v/L.length);
+   let lm=0,lv=0,n=0;const q=[];for(let y=1;y<H-1;y++)for(let xx=1;xx<W-1;xx++){const i=y*W+xx,g=4*L[i]-L[i-1]-L[i+1]-L[i-W]-L[i+W];q.push(g);lm+=g;n++}
+   lm/=n;for(const g of q)lv+=(g-lm)**2;lv/=n;
+   const brightness=Math.round(Math.max(0,100-Math.abs(mean-140)/1.4)),contrast=Math.round(Math.min(100,sd/55*100)),sharpness=Math.round(Math.min(100,Math.sqrt(lv)/16*100));
+   const score=Math.round(brightness*.3+contrast*.3+sharpness*.4);res({brightness,contrast,sharpness,score,pass:score>=60})
+  }catch(e){res({brightness:86,contrast:78,sharpness:82,score:82,pass:true,estimated:true})}};im.onerror=rej;im.src=url})}
+ return {config,CLASSES,STAGES,normalizeYolo,mockDetections,analyze,assessQuality,async getHome(){return DATA}}
+})();
+const API=OralScanAPI,C=API.CLASSES,$=s=>document.querySelector(s);
+
+/* ---------------- App state ---------------- */
+const ZONES=[{id:'UR',t:'Upper Right',fdi:'11–18'},{id:'UF',t:'Upper Front',fdi:'13–23'},{id:'UL',t:'Upper Left',fdi:'21–28'},{id:'LR',t:'Lower Right',fdi:'41–48'},{id:'LF',t:'Lower Front',fdi:'33–43'},{id:'LL',t:'Lower Left',fdi:'31–38'}];
+const SHOTS_PER_ZONE=2;
+const S={zone:'UR',shots:{},last:null,busy:false,paused:false,result:null,heat:false,hidden:{},sel:null,hover:null,jobToken:null,kid:{stage:'idle',progress:0},lastPong:0};
+ZONES.forEach(z=>S.shots[z.id]=[]);
+const HOOKS={};
+const zone=()=>ZONES.find(z=>z.id===S.zone);
+const allShots=()=>ZONES.flatMap(z=>S.shots[z.id]);
+const zoneP=id=>Math.min(S.shots[id].length,SHOTS_PER_ZONE)/SHOTS_PER_ZONE;
+const pct=()=>Math.round(ZONES.reduce((a,z)=>a+zoneP(z.id),0)/ZONES.length*100);
+const zonesDone=()=>ZONES.filter(z=>zoneP(z.id)>=1).length;
+const qLabel=s=>s>=80?'Good':s>=60?'Fair':'Poor';
+function toast(m){let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.className='toast';t.setAttribute('role','status');document.body.appendChild(t)}t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200)}
+
+/* ---------------- Kid Pad sync (BroadcastChannel + storage fallback) ---------------- */
+const BC='BroadcastChannel' in window?new BroadcastChannel('oralscan'):null;
+function send(m){try{BC&&BC.postMessage(m)}catch(e){}try{localStorage.setItem('oralscan-msg',JSON.stringify({...m,n:Math.random()}))}catch(e){}}
+function kidSync(patch){S.kid={...S.kid,...(patch||{}),zone:zone().t,stars:zonesDone(),total:ZONES.length,ts:Date.now()};try{localStorage.setItem('oralscan-kid',JSON.stringify(S.kid))}catch(e){}send({type:'state',state:S.kid})}
+function onMsg(m){if(!m)return;const isKid=location.hash==='#kid';
+ if(isKid){if(m.type==='state')updateKid(m.state);if(m.type==='ping')send({type:'pong'})}
+ else{if(m.type==='pong'||m.type==='hello'){const was=Date.now()-S.lastPong<5000;S.lastPong=Date.now();updateKidDot();if(m.type==='hello'){kidSync();if(!was)toast('Kid Pad connected')}}
+  if(m.type==='kid-ready')toast('Emma is ready to start!')}}
+BC&&(BC.onmessage=e=>onMsg(e.data));
+addEventListener('storage',e=>{if(e.key==='oralscan-msg'&&e.newValue&&!BC)onMsg(JSON.parse(e.newValue))});
+function updateKidDot(){const d=$('#kidDot');if(d)d.classList.toggle('on',Date.now()-S.lastPong<5000)}
+const pingKid=()=>{if(location.hash!=='#kid'){send({type:'ping'});updateKidDot()}};setInterval(pingKid,2000);setTimeout(pingKid,300);
+
+/* ---------------- ① Live Screening ---------------- */
+function ring(p){const r=22,c=+(2*Math.PI*r).toFixed(2);return `<svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="${r}" fill="none" stroke="var(--c-border)" stroke-width="5"/><circle class="rg" cx="28" cy="28" r="${r}" fill="none" stroke="var(--c-success-2)" stroke-width="5" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c}" data-c="${c}" data-p="${p}" transform="rotate(-90 28 28)"/><text x="28" y="32" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">${Math.round(p*100)}%</text></svg>`}
+function zonesHTML(){return ZONES.map(z=>`<button class="zone" data-zone="${z.id}" aria-pressed="${S.zone===z.id}" aria-label="${z.t}, ${S.shots[z.id].length} of ${SHOTS_PER_ZONE} photos">${ring(zoneP(z.id))}<span>${z.t}</span><small>FDI ${z.fdi}</small></button>`).join('')}
+function paintRings(root=document){root.querySelectorAll('.rg').forEach(r=>requestAnimationFrame(()=>r.style.strokeDashoffset=r.dataset.c*(1-r.dataset.p)))}
+function qcard(){const q=S.last&&S.last.q;
+ if(S.busy)return `<div class="row between"><h2>Image Quality</h2><span class="tag blue">Checking…</span></div><div class="row muted"><span class="spin"></span>Scoring brightness, contrast and sharpness…</div>`;
+ if(!q)return `<div class="row between"><h2>Image Quality</h2><span class="tag gray">Waiting</span></div><p class="muted">Upload or take a photo of the current area to get a quality score.</p>`;
+ const rows=[['Brightness',q.brightness],['Contrast',q.contrast],['Sharpness',q.sharpness]];
+ const low=rows.slice().sort((a,b)=>a[1]-b[1])[0][0],tip={Brightness:'Add more light or face a window.',Contrast:'Move the camera tip closer to the teeth.',Sharpness:'Hold steady — the photo is blurry.'}[low];
+ return `<div class="row between"><h2>Image Quality</h2><span class="tag ${q.pass?'':'warn'}">${q.pass?'Accepted':'Retake needed'}${q.estimated?' · estimated':''}</span></div>
+ <div class="qgrid"><div class="qscore"><span class="big" data-count="${q.score}">0</span><small>/ 100</small></div><div class="list" style="gap:8px">${rows.map(([k,v])=>`<div class="qrow"><span>${k}</span><div class="bar sm"><i data-w="${v}" style="${v<60?'background:var(--c-warn)':''}"></i></div><b>${v}</b></div>`).join('')}</div></div>
+ <p class="muted">${q.pass?'Image quality: '+qLabel(q.score)+'. Saved to '+S.last.zone+'.':tip}</p>`}
+V.screening=()=>`<h1>Live Screening</h1><p class="lead">Keep the scanner steady and follow the real-time guidance.</p>
+<section class="card"><div class="row between"><h2>Scan Progress</h2><span class="big"><span id="pct">${pct()}</span>%</span></div><div class="bar"><i id="pbar" data-w="${pct()}"></i></div><div class="row between wrap"><span class="muted" id="pmeta">${zonesDone()} / ${ZONES.length} areas scanned · ${allShots().length} photos</span><span class="tag" id="qtag">Image quality: ${S.last?qLabel(S.last.q.score):'—'}</span></div></section>
+<section class="card"><div class="row between"><h2>Live Camera Preview</h2><span class="tag gray">HD 1080P</span></div>
+<div class="cam"><img id="camImg" src="${S.last?S.last.url:'assets/live-preview.png'}" alt="Live camera preview" onerror="this.remove()"><span class="tag live">● Live</span><div class="frame"></div><div class="tip" id="camTip">Move slightly closer<small>Hold steady for 2 seconds</small></div></div>
+<div class="bottom"><button class="btn sec sm" data-pick="fileUp">${svg('up',16)}Upload photo</button><button class="btn sm" data-pick="fileCam">${svg('cam',16)}Take photo</button></div>
+<input type="file" id="fileUp" accept="image/*" multiple hidden><input type="file" id="fileCam" accept="image/*" capture="environment" hidden>
+<button class="btn ghost" id="sampleBtn">Use sample photo</button></section>
+<section class="card" id="qcard" aria-live="polite">${qcard()}</section>
+<section class="card"><div class="row between"><h2>Coverage Status</h2><span class="muted">Tap an area to scan it</span></div><div class="zones" id="zones">${zonesHTML()}</div></section>
+<section class="card"><h2>Current Guidance</h2><b style="color:var(--c-primary);font-size:var(--fs-14)" id="curArea">Current Area: ${zone().t}</b><p class="muted">Keep the camera tip 1–2 cm from the teeth.<br>Rotate gently until the focus frame turns green.</p><div class="row"><span class="tag">Hold steady</span><span class="tag blue">Angle left</span></div></section>
+<div class="bottom"><button class="btn sec" style="width:auto" id="pause">${S.paused?'Resume':'Pause'}</button><button class="btn" id="analyzeBtn" ${allShots().length?'':'disabled'}>Analyze ${allShots().length||''} photo${allShots().length===1?'':'s'}</button></div>
+<p class="muted" style="text-align:center" id="aHint">${allShots().length?'':'Add at least one accepted photo to analyze.'}</p>`;
+function refreshScreening(){const p=pct();const set=(s,v)=>{const e=$(s);if(e)e.innerHTML=v};
+ set('#pct',p);const b=$('#pbar');if(b)b.style.width=p+'%';set('#pmeta',`${zonesDone()} / ${ZONES.length} areas scanned · ${allShots().length} photos`);
+ set('#qtag','Image quality: '+(S.last?qLabel(S.last.q.score):'—'));set('#curArea','Current Area: '+zone().t);
+ const qc=$('#qcard');if(qc){qc.innerHTML=qcard();setTimeout(()=>{qc.querySelectorAll('[data-w]').forEach(i=>i.style.width=i.dataset.w+'%');qc.querySelectorAll('[data-count]').forEach(countUp)},30)}
+ const z=$('#zones');if(z){z.innerHTML=zonesHTML();z.querySelectorAll('.rg').forEach(r=>{const prev=r.dataset.prev;r.style.transition='none';r.style.strokeDashoffset=r.dataset.c*(1-(S._prev?.[r.closest('[data-zone]').dataset.zone]??0));r.getBoundingClientRect();r.style.transition=''});paintRings(z)}
+ S._prev=Object.fromEntries(ZONES.map(zz=>[zz.id,zoneP(zz.id)]));
+ const n=allShots().length,a=$('#analyzeBtn');if(a){a.disabled=!n||S.busy;a.textContent=`Analyze ${n||''} photo${n===1?'':'s'}`}set('#aHint',n?'':'Add at least one accepted photo to analyze.');
+ const t=$('#camTip');if(t&&S.last)t.innerHTML=S.last.q.pass?'Great shot!<small>Move to the next area</small>':'Move slightly closer<small>Hold steady for 2 seconds</small>';
+ document.querySelectorAll('[data-pick],#sampleBtn').forEach(x=>x.disabled=S.paused||S.busy)}
+async function addShot(url,blob){if(S.paused)return;S.busy=true;refreshScreening();
+ const ci=$('#camImg');if(ci)ci.src=url;
+ let q;try{q=await API.assessQuality(url)}catch(e){q={brightness:0,contrast:0,sharpness:0,score:0,pass:false}}
+ await new Promise(r=>setTimeout(r,450));S.busy=false;const zn=zone();S.last={url,q,zone:zn.t};
+ if(q.pass){S.shots[zn.id].push({url,blob,q,zone:zn.id});
+  if(S.shots[zn.id].length>=SHOTS_PER_ZONE){const nx=ZONES.find(z=>zoneP(z.id)<1);if(nx){S.zone=nx.id;toast(zn.t+' complete · next: '+nx.t)}else toast('All areas scanned!')}}
+ else toast('Photo rejected — please retake');
+ refreshScreening();kidSync({stage:'scanning',progress:pct()/100})}
+HOOKS.screening=pg=>{S._prev=Object.fromEntries(ZONES.map(z=>[z.id,zoneP(z.id)]));setTimeout(()=>paintRings(pg),250);
+ ['fileUp','fileCam'].forEach(id=>pg.querySelector('#'+id).addEventListener('change',async e=>{for(const f of [...e.target.files])await addShot(URL.createObjectURL(f),f);e.target.value=''}));
+ kidSync({stage:S.paused?'paused':'scanning',progress:pct()/100})};
+
+/* ---------------- ② Analyzing (M1→M5) ---------------- */
+V.analyzing=()=>{const n=allShots().length||1;return `<h1>Analyzing Scan</h1><p class="lead">Tooth Hero AI is reviewing ${n} photo${n===1?'':'s'} for Emma. This usually takes a few seconds.</p>
+<section class="card lg"><div class="row between"><h2>Overall</h2><span class="big"><span id="apct">0</span>%</span></div><div class="bar"><i id="abar" style="width:0"></i></div><span class="muted" id="astat">Preparing images…</span></section>
+<section class="card"><h2>Analysis Pipeline</h2><ol class="pipe">${API.STAGES.map(s=>`<li class="step" data-st="${s.id}"><span class="sdot">${s.id}</span><div class="sbody"><div class="row between"><b>${s.t}</b><span class="muted sstat">Waiting</span></div><span class="muted">${s.s}</span><div class="bar sm"><i style="width:0"></i></div></div></li>`).join('')}</ol></section>
+<section class="card"><h2>Live Log</h2><pre class="log" id="alog" aria-live="polite"></pre></section>
+<button class="btn sec" id="cancelA">Cancel</button>`};
+HOOKS.analyzing=async pg=>{const token=S.jobToken={};const imgs=allShots().length?allShots():[{url:'assets/live-preview.png'}];const ids=API.STAGES.map(s=>s.id),seen={};
+ const log=m=>{const el=pg.querySelector('#alog');if(el){el.textContent+=`[${new Date().toLocaleTimeString()}] ${m}\n`;el.scrollTop=el.scrollHeight}};
+ log(`Job created · ${imgs.length} image(s) · ${API.config.mock?'mock engine':API.config.baseURL}`);kidSync({stage:'analyzing',progress:0});
+ try{const res=await API.analyze(imgs,{onStage:e=>{if(S.jobToken!==token)throw new Error('cancelled');
+   const li=pg.querySelector(`[data-st="${e.id}"]`);if(!li)return;const st=API.STAGES.find(s=>s.id===e.id);
+   li.classList.toggle('run',e.status==='running');li.classList.toggle('done',e.status==='done');li.querySelector('.bar i').style.width=e.progress*100+'%';
+   li.querySelector('.sstat').textContent=e.status==='done'?`Done · ${e.ms} ms`:`${Math.round(e.progress*100)}%`;
+   if(seen[e.id]!==e.status){seen[e.id]=e.status;log(`${e.id} ${st.t} — ${e.status==='done'?'completed in '+e.ms+' ms':'started'}`);if(e.status==='running')pg.querySelector('#astat').textContent=st.t+'…'}
+   const ov=Math.round((ids.indexOf(e.id)+(e.status==='done'?1:e.progress))/ids.length*100);pg.querySelector('#apct').textContent=ov;pg.querySelector('#abar').style.width=ov+'%';kidSync({stage:'analyzing',progress:ov/100})}});
+  if(S.jobToken!==token)return;S.result=res;S.sel=null;S.hidden={};log(`Report ${res.id} ready · ${res.detections.length} findings · risk ${res.risk}`);
+  pg.querySelector('#astat').textContent='Complete — opening report';kidSync({stage:'done',progress:1});setTimeout(()=>{if(S.jobToken===token)location.hash='report'},800)
+ }catch(e){log('Stopped: '+e.message);if(e.message!=='cancelled'){toast('Analysis failed — '+e.message);const s=pg.querySelector('#astat');if(s)s.textContent='Failed: '+e.message}}};
+
+/* ---------------- ③ Report (canvas detections + heatmap) ---------------- */
+const cur=()=>S.result||{id:'SAMPLE',detections:API.mockDetections(),image:'assets/live-preview.png',risk:'Low',sample:true};
+const cnt=k=>cur().detections.filter(d=>d.cls===k).length;
+V.report=()=>{const r=cur();return `<h1>Detailed Report</h1><p class="lead">Review Emma’s attention areas and follow-up suggestions.</p>
+<section class="card lg"><div class="row between wrap"><h2>Detection View</h2><div class="seg" role="tablist" aria-label="Overlay mode"><button role="tab" data-view="box" aria-selected="${!S.heat}">Boxes</button><button role="tab" data-view="heat" aria-selected="${S.heat}">Heatmap</button></div></div>
+<div class="viewer" id="viewer"><img id="rimg" src="${r.image}" alt="Screening photo with detected areas" onerror="this.parentNode.classList.add('img-failed')"><canvas id="rcv" aria-hidden="true"></canvas></div>
+<div class="row wrap" style="gap:6px">${Object.entries(C).map(([k,c])=>`<button class="tag fchip" data-cls="${k}" aria-pressed="${!S.hidden[k]}" style="--cc:${c.color}"><i></i>${c.label} · ${cnt(k)}</button>`).join('')}</div>
+${r.sample?'<span class="muted">Sample result — run a screening to see Emma’s own photos.</span>':`<span class="muted">Report ${r.id}</span>`}</section>
+<section class="card"><div class="row between"><h2>Findings</h2><span class="tag blue">${r.detections.length} detected</span></div><div class="list" id="dets">${r.detections.map(d=>`<button class="det${S.hidden[d.cls]?' off':''}" data-det="${d.id}" data-cls-of="${d.cls}" style="--cc:${C[d.cls].color}" aria-pressed="${S.sel===d.id}"><span class="fdi">${d.fdi}</span><span style="flex:1;text-align:left;min-width:0"><b>${C[d.cls].label}</b><span class="muted">FDI ${d.fdi} · Confidence ${Math.round(d.conf*100)}%</span></span><span class="bar sm" style="width:56px"><i style="width:${d.conf*100}%;background:var(--cc)"></i></span></button>`).join('')}</div></section>
+<section class="card lg"><h2>Report Overview</h2><div class="row between wrap"><div><span class="muted">Selected Area</span><h3 id="selArea">Lower Molars</h3><span class="muted">Screening indication only</span></div><div class="row" style="gap:6px"><span class="tag">Risk: ${r.risk}</span><span class="tag">Quality: Good</span></div></div></section>
+<section class="card"><h2>Tooth Area Detail</h2>${teeth(true)}${legend(true)}</section>
+<section class="card"><h2>Screening Evidence</h2><b style="font-size:var(--fs-14)">Possible plaque buildup</b><div class="row wrap"><span class="tag blue">Confidence: Medium</span><span class="tag">Coverage: Complete</span></div></section>
+<section class="card"><h2>What this means</h2><p class="muted">Back teeth are harder for children to clean. Guide Emma to brush this area more carefully.</p></section>
+<div class="note">${svg('info',16)}Screening results are for early awareness only, not a dental diagnosis.</div>
+<div class="bottom"><button class="btn sec" style="width:auto" ${go('summary')}>Back</button><button class="btn">Talk to a Dentist</button></div>`};
+function rr(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()}
+function drawReport(k=1){const img=$('#rimg'),cv=$('#rcv');if(!img||!cv||!img.naturalWidth)return;
+ const W=img.clientWidth,H=img.clientHeight,dpr=devicePixelRatio||1;if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.width=W+'px';cv.style.height=H+'px'}
+ const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);
+ const dets=cur().detections.filter(d=>!S.hidden[d.cls]),hl=S.hover||S.sel;
+ if(S.heat){x.fillStyle='rgba(17,24,39,.18)';x.fillRect(0,0,W,H);x.globalCompositeOperation='lighter';
+  dets.forEach(d=>{const [bx,by,bw,bh]=d.box,cx=(bx+bw/2)*W,cy=(by+bh/2)*H,rad=Math.max(bw*W,bh*H)*(.9+.5*k);const g=x.createRadialGradient(cx,cy,0,cx,cy,rad);
+   g.addColorStop(0,`rgba(239,68,68,${(.35+.5*d.conf)*k})`);g.addColorStop(.45,`rgba(245,158,11,${.35*d.conf*k})`);g.addColorStop(1,'rgba(59,130,246,0)');x.fillStyle=g;x.fillRect(cx-rad,cy-rad,rad*2,rad*2)});
+  x.globalCompositeOperation='source-over';return}
+ const placed=[];dets.forEach(d=>{const c=C[d.cls].color,[bx,by,bw,bh]=d.box,X=bx*W,Y=by*H,w=bw*W,h=bh*H,on=hl===d.id;x.globalAlpha=hl&&!on?.35:1;
+  rr(x,X,Y,w,h,6);x.fillStyle=c+(on?'40':'1a');x.fill();x.setLineDash([2*(w+h)*k,2*(w+h)]);x.lineWidth=on?3:2;x.strokeStyle=c;x.stroke();x.setLineDash([]);
+  if(k>.6){const t=`${d.fdi} · ${C[d.cls].label} ${Math.round(d.conf*100)}%`;x.font='600 11px Inter, system-ui, sans-serif';const tw=x.measureText(t).width+10;const lx=Math.max(2,Math.min(X,W-tw-2));const hit=y=>placed.some(p=>lx<p[0]+p[2]&&lx+tw>p[0]&&y<p[1]+17&&y+17>p[1]);let ly=Y-19;if(ly<2||hit(ly))ly=Y+h+3;let g=0;while(hit(ly)&&g++<8)ly+=18;placed.push([lx,ly,tw]);
+   rr(x,lx,ly,tw,16,4);x.fillStyle=c;x.fill();x.fillStyle='#fff';x.fillText(t,lx+5,ly+12)}});x.globalAlpha=1}
+function animateReport(){clearTimeout(S._anim);let i=0;const N=24;(function f(){const p=++i/N;drawReport(1-Math.pow(1-p,3));if(i<N)S._anim=setTimeout(f,25)})()}
+function selectDet(id){S.sel=S.sel===id?null:id;document.querySelectorAll('.det').forEach(b=>b.setAttribute('aria-pressed',b.dataset.det===S.sel));
+ const d=cur().detections.find(z=>z.id===S.sel),a=$('#selArea');if(a)a.textContent=d?`Tooth ${d.fdi} · ${C[d.cls].label}`:'Lower Molars';
+ if(d){const el=document.querySelector(`[data-det="${d.id}"]`);el&&el.scrollIntoView({block:'nearest',behavior:'smooth'})}drawReport()}
+function hitTest(e){const cv=$('#rcv'),r=cv.getBoundingClientRect(),px=(e.clientX-r.left)/r.width,py=(e.clientY-r.top)/r.height;
+ return cur().detections.filter(d=>!S.hidden[d.cls]&&px>=d.box[0]&&px<=d.box[0]+d.box[2]&&py>=d.box[1]&&py<=d.box[1]+d.box[3]).sort((a,b)=>a.box[2]*a.box[3]-b.box[2]*b.box[3])[0]}
+HOOKS.report=pg=>{const img=pg.querySelector('#rimg'),cv=pg.querySelector('#rcv');img.complete&&img.naturalWidth?setTimeout(animateReport,250):img.addEventListener('load',animateReport);
+ let lastW=0;const ro=new ResizeObserver(en=>{const w=Math.round(en[0].contentRect.width);if(w&&w!==lastW){lastW=w;requestAnimationFrame(()=>drawReport())}});ro.observe(pg.querySelector('#viewer'));S._ro&&S._ro.disconnect();S._ro=ro;
+ cv.addEventListener('click',e=>{const d=hitTest(e);if(d)selectDet(d.id)});
+ cv.addEventListener('pointermove',e=>{const d=hitTest(e);cv.style.cursor=d?'pointer':'default';const id=d?d.id:null;if(id!==S.hover){S.hover=id;document.querySelectorAll('.det').forEach(b=>b.classList.toggle('hl',b.dataset.det===id));drawReport()}});
+ cv.addEventListener('pointerleave',()=>{S.hover=null;document.querySelectorAll('.det').forEach(b=>b.classList.remove('hl'));drawReport()});
+ pg.querySelectorAll('.det').forEach(b=>{const on=()=>{S.hover=b.dataset.det;drawReport()},off=()=>{S.hover=null;drawReport()};b.addEventListener('pointerenter',on);b.addEventListener('pointerleave',off);b.addEventListener('focus',on);b.addEventListener('blur',off)})};
+
+/* ---------------- ④ Kid Pad (gamified view only) ---------------- */
+const HERO=`<svg width="150" height="150" viewBox="0 0 120 120" aria-hidden="true"><path d="M18 52 6 74l22-8z" fill="#3b82f6"/><path d="M102 52l12 22-22-8z" fill="#3b82f6"/><path d="M38 14c-14 0-22 12-19 30l7 48c2 12 13 12 15 1l5-22h28l5 22c2 11 13 11 15-1l7-48c3-18-5-30-19-30-9 0-13 5-22 5s-13-5-22-5z" fill="#fff" stroke="#bfebdd" stroke-width="3"/><circle cx="48" cy="46" r="6" fill="#111827"/><circle cx="72" cy="46" r="6" fill="#111827"/><circle cx="50" cy="44" r="2" fill="#fff"/><circle cx="74" cy="44" r="2" fill="#fff"/><path d="M48 60q12 10 24 0" stroke="#111827" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="38" cy="58" r="5" fill="#fda4af" opacity=".7"/><circle cx="82" cy="58" r="5" fill="#fda4af" opacity=".7"/><path d="M60 22l3 6 6 1-4.5 4 1 6-5.5-3-5.5 3 1-6-4.5-4 6-1z" fill="#fbbf24"/></svg>`;
+V.kid=()=>`<div class="kidv"><div class="hero-t">${HERO}</div><h1><span id="kmsg">Hi Hero!</span></h1><p class="lead" id="ksub">Get ready for your tooth adventure.</p>
+<div class="stars" id="kstars" aria-label="Stars earned">${ZONES.map(()=>`<span class="star">${svg('star',38)}</span>`).join('')}</div>
+<div class="bar kbar"><i id="kbar"></i></div><button class="btn" id="kidReady" style="max-width:280px">I’m ready!</button><p class="muted" id="klink">Waiting for parent device…</p></div>`;
+function updateKid(st){if(location.hash!=='#kid'||!st)return;const M={idle:['Hi Hero!','Get ready for your tooth adventure.'],scanning:['Open wide, Hero!',`Now exploring the ${st.zone} castle`],paused:['Break time!','Take a deep breath — we’ll continue soon.'],analyzing:['Tooth Hero is on patrol…','Looking for sneaky sugar bugs'],done:['Mission complete!',`You earned ${st.stars} of ${st.total} stars. Super job!`]}[st.stage]||['Hi Hero!',''];
+ $('#kmsg').textContent=M[0];$('#ksub').textContent=M[1];$('#kbar').style.width=Math.round((st.progress||0)*100)+'%';
+ document.querySelectorAll('#kstars .star').forEach((s,i)=>s.classList.toggle('on',i<(st.stage==='done'?Math.max(st.stars,1):st.stars)));$('#klink').textContent='Connected to parent device'}
+HOOKS.kid=()=>{send({type:'hello'});try{updateKid(JSON.parse(localStorage.getItem('oralscan-kid')))}catch(e){}};
+
+/* ---------------- shared events ---------------- */
+document.addEventListener('click',async e=>{
+ const pk=e.target.closest('[data-pick]');if(pk){$('#'+pk.dataset.pick).click();return}
+ if(e.target.closest('#sampleBtn')){let url='assets/live-preview.png',blob;try{blob=await (await fetch(url)).blob();url=URL.createObjectURL(blob)}catch(_){}addShot(url,blob);return}
+ const zb=e.target.closest('[data-zone]');if(zb){S.zone=zb.dataset.zone;refreshScreening();kidSync();return}
+ if(e.target.closest('#pause')){S.paused=!S.paused;e.target.closest('#pause').textContent=S.paused?'Resume':'Pause';refreshScreening();kidSync({stage:S.paused?'paused':'scanning'});return}
+ if(e.target.closest('#analyzeBtn')){location.hash='analyzing';return}
+ if(e.target.closest('#cancelA')){S.jobToken=null;kidSync({stage:'scanning'});location.hash='screening';return}
+ const v=e.target.closest('[data-view]');if(v){S.heat=v.dataset.view==='heat';document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-selected',b===v));animateReport();return}
+ const fc=e.target.closest('[data-cls]');if(fc){const k=fc.dataset.cls;S.hidden[k]=!S.hidden[k];fc.setAttribute('aria-pressed',!S.hidden[k]);document.querySelectorAll(`[data-cls-of="${k}"]`).forEach(b=>b.classList.toggle('off',!!S.hidden[k]));if(S.sel&&cur().detections.find(d=>d.id===S.sel).cls===k)selectDet(S.sel);drawReport();return}
+ const dt=e.target.closest('[data-det]');if(dt){selectDet(dt.dataset.det);return}
+ if(e.target.closest('#kidBtn')){window.open(location.pathname+'#kid','oralscan-kid');return}
+ if(e.target.closest('#kidReady')){send({type:'kid-ready'});e.target.closest('#kidReady').textContent='Yay! Waiting for grown-up…';return}
+});
+
+const main=document.getElementById('main'),tabs=document.getElementById('tabs');
+tabs.innerHTML=PAGES.map(p=>`<button class="tab" data-go="${p.id}">${svg(p.i,20)}${p.t}</button>`).join('');
+function render(id){if(!V[id])id='home';main.innerHTML=`<section class="page active stg" aria-labelledby="h-${id}">${V[id]()}</section>`;
+ const pg=main.firstElementChild;pg.querySelector('h1').id='h-'+id;[...pg.children].forEach((c,i)=>c.style.setProperty('--i',i));
+ tabs.querySelectorAll('.tab').forEach(t=>t.dataset.go===id?t.setAttribute('aria-current','page'):t.removeAttribute('aria-current'));
+ window.scrollTo({top:0,behavior:'smooth'});if(id!=='analyzing')S.jobToken=null;document.body.classList.toggle('kid',id==='kid');HOOKS[id]&&HOOKS[id](pg);
+ requestAnimationFrame(()=>setTimeout(()=>{pg.querySelectorAll('[data-w]').forEach(b=>b.style.width=b.dataset.w+'%');pg.querySelectorAll('.segs i').forEach((s,i)=>setTimeout(()=>s.classList.toggle('on',s.dataset.on==='true'),i*80));pg.querySelectorAll('[data-count]').forEach(countUp)},200));}
+function countUp(el){const to=+el.dataset.count,t0=performance.now(),d=900;let fr=0;(function f(){const p=Math.min(1,Math.max((performance.now()-t0)/d,++fr/60));el.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(t0)}
+document.addEventListener('click',e=>{
+ const g=e.target.closest('[data-go]');if(g){location.hash=g.dataset.go;return}
+ const l=e.target.closest('[data-load]');if(l&&!l.disabled){l.classList.add('loading');const tx=l.textContent;l.textContent='Loading…';setTimeout(()=>{l.classList.remove('loading');l.textContent=tx;location.hash=l.dataset.load;if(l.dataset.load==='connect')render('connect')},900);return}
+ const r=e.target.closest('[data-rc]');if(r){const it=DATA.ready[r.dataset.rc];it.on=!it.on;r.setAttribute('aria-pressed',!!it.on);const d=DATA.ready.filter(x=>x.on).length,all=d===DATA.ready.length;document.getElementById('rcount').textContent=`${d} / ${DATA.ready.length} completed`;document.getElementById('startLive').disabled=!all;document.getElementById('rhint').textContent=all?'':'Complete all ready checks to continue.';return}
+ const t=e.target.closest('[data-tooth]');if(t&&document.getElementById('selArea')){document.querySelectorAll('.tooth').forEach(x=>x.classList.remove('sel'));t.classList.add('sel');document.getElementById('selArea').textContent=(+t.dataset.tooth<8?'Upper':'Lower')+(t.classList.contains('warn')?' Molars':' Teeth')}
+});
+document.addEventListener('keydown',e=>{const c=e.target.closest('[role=button][data-go]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();c.click()}});
+addEventListener('hashchange',()=>render(location.hash.slice(1)));render(location.hash.slice(1)||'home');
+</script></body></html>
